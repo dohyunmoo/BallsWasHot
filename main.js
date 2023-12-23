@@ -4,7 +4,8 @@ import { Ball } from "./class";
 const windowWidth = 1200;
 const windowHeight = 850;
 
-let mouseStartPos, mouseEndPos;
+let mouseStartPos = {x: -1, y: -1};
+let mouseEndPos = {x: -1, y: -1};
 let mouseDownTime = 0;
 
 let powerLine, power;
@@ -30,16 +31,6 @@ const world = engine.world;
 Render.run(render);
 Runner.run(engine);
 
-function addBall() {
-    console.log(power)
-
-    World.add(world, objBall)
-
-    const forceVector = { x: mouseEndPos.x - mouseStartPos.x, y: mouseEndPos.y - mouseStartPos.y };
-
-    // Body.applyForce(objBall, objBall.position, forceVector);
-}
-
 function checkBall() {
     if (objBall) {
         if (objBall.x < 0 || objBall.x > windowWidth || objBall.y < 0 || objBall.y > windowHeight) {
@@ -52,25 +43,30 @@ function checkBall() {
 }
 
 window.onmousedown = (event) => {
-    // if (user_move) {
     mouseStartPos = { x: event.clientX, y: event.clientY };
     mouseDownTime = Date.now();
 
-    if (mouseStartPos) {
+    if (mouseStartPos.x != -1 && mouseStartPos.y != -1) {
         setTimeout(() => {
             if (Date.now() - mouseDownTime >= 3000) {
                 console.log("WOW")
             }
-            mouseStartPos = {};
+            mouseStartPos = {x: -1, y: -1};
             World.remove(world, powerLine)
         }, 3000);
     }
-    // }
 
+    objBall = Bodies.circle(mouseStartPos.x, mouseStartPos.y, userBall.radius, {
+        isSleeping: false,
+        render: {
+            fillStyle: "red",
+        },
+        restitution: 0.2,
+    });
 }
 
 window.onmousemove = (event) => {
-    if (mouseStartPos) {
+    if (mouseStartPos.x != -1 && mouseStartPos.y != -1) {
         if (powerLine) {
             World.remove(world, powerLine);
         }
@@ -120,18 +116,13 @@ window.onmouseup = (event) => {
     if (powerLine) {
         World.remove(world, powerLine);
 
-        objBall = Bodies.circle(mouseStartPos.x, mouseStartPos.y, userBall.radius, {
-            isSleeping: false,
-            render: {
-                fillStyle: "red",
-            },
-            restitution: 0.2,
-        });
-
-        addBall()
+        World.add(world, objBall)
+        const forceVector = { x: -(mouseEndPos.x - mouseStartPos.x) / 3000, y: -(mouseEndPos.y - mouseStartPos.y) / 3000 };
+        Body.applyForce(objBall, { x: objBall.position.x, y: objBall.position.y }, forceVector);
     }
 
-    mouseStartPos = null;
+    mouseStartPos = {x: -1, y: -1};
+    mouseEndPos = {x: -1, y: -1};
     // user_move = false
 }
 
