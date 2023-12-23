@@ -4,12 +4,14 @@ import { Ball } from "./class";
 const windowWidth = 1200;
 const windowHeight = 850;
 
-let BALL = Ball
 let mouseStartPos, mouseEndPos;
+let mouseDownTime = 0;
 
 let powerLine, power;
 
-let userBall;
+let userBall = new Ball();
+let objBall;
+// let user_move;
 
 const engine = Engine.create();
 const render = Render.create({
@@ -18,7 +20,7 @@ const render = Render.create({
     options: {
         wireframes: false,
         background: "#F7F4C8",
-        width: windowWidth,
+        width: windowWidth, 
         height: windowHeight,
     }
 });
@@ -30,21 +32,41 @@ Runner.run(engine);
 
 function addBall() {
     console.log(power)
-    userBall = new BALL();
 
-    const body = Bodies.circle(300, 50, userBall.radius, {
-        isSleeping: true,
-        render: {
-            fillStyle: "red",
-        },
-        restitution: 0.2,
-    });
+    World.add(world, objBall)
 
-    World.add(world, body)
+    const forceVector = { x: mouseEndPos.x - mouseStartPos.x, y: mouseEndPos.y - mouseStartPos.y };
+
+    // Body.applyForce(objBall, objBall.position, forceVector);
+}
+
+function checkBall() {
+    if (objBall) {
+        if (objBall.x < 0 || objBall.x > windowWidth || objBall.y < 0 || objBall.y > windowHeight) {
+            World.remove(world, objBall);
+            console.log("removed")
+        } else {
+            requestAnimationFrame(checkBall);
+        }
+    }
 }
 
 window.onmousedown = (event) => {
+    // if (user_move) {
     mouseStartPos = { x: event.clientX, y: event.clientY };
+    mouseDownTime = Date.now();
+
+    if (mouseStartPos) {
+        setTimeout(() => {
+            if (Date.now() - mouseDownTime >= 3000) {
+                console.log("WOW")
+            }
+            mouseStartPos = {};
+            World.remove(world, powerLine)
+        }, 3000);
+    }
+    // }
+
 }
 
 window.onmousemove = (event) => {
@@ -59,7 +81,7 @@ window.onmousemove = (event) => {
 
         var color;
 
-        switch(power) {
+        switch(true) {
             case power < 50:
                 color = "green";
                 break;
@@ -82,6 +104,7 @@ window.onmousemove = (event) => {
 
         powerLine = Bodies.rectangle(centerX, centerY, power, height, {
             isStatic: true,
+            isSensor: true,
             render: {
                 fillStyle: color,
             },
@@ -96,8 +119,20 @@ window.onmouseup = (event) => {
 
     if (powerLine) {
         World.remove(world, powerLine);
+
+        objBall = Bodies.circle(mouseStartPos.x, mouseStartPos.y, userBall.radius, {
+            isSleeping: false,
+            render: {
+                fillStyle: "red",
+            },
+            restitution: 0.2,
+        });
+
+        addBall()
     }
 
     mouseStartPos = null;
-    addBall()
+    // user_move = false
 }
+
+// checkBall()
